@@ -26,12 +26,18 @@ export function MobileQrModal({ isOpen, onClose }: MobileQrModalProps) {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+        <div
+          onClick={onClose}
+          className="fixed inset-0 z-[9999] w-screen h-screen flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-xl overflow-y-auto"
+          style={{ backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }}
+        >
           <motion.div
-            initial={{ scale: 0.9, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="relative w-full max-w-md p-6 sm:p-8 rounded-3xl bg-[#12121a] border border-[#8b5cf6]/40 shadow-2xl space-y-6 text-center"
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-md my-auto m-auto p-6 sm:p-8 rounded-3xl bg-[#12121a] border border-[#8b5cf6]/50 shadow-[0_0_50px_rgba(139,92,246,0.3)] space-y-6 text-center"
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-[#1f1f2e] pb-4">
@@ -54,7 +60,7 @@ export function MobileQrModal({ isOpen, onClose }: MobileQrModalProps) {
 
             {/* QR Code Container */}
             <div className="p-4 rounded-2xl bg-[#0a0a0f] border border-[#8b5cf6]/40 inline-block glow-purple space-y-3">
-              <div className="relative w-60 h-60 mx-auto rounded-xl overflow-hidden bg-[#0a0a0f]">
+              <div className="relative w-56 h-56 mx-auto rounded-xl overflow-hidden bg-[#0a0a0f]">
                 <Image
                   src={qrCodeUrl}
                   alt="Kizuna Mobile Web App QR Code"
@@ -83,7 +89,7 @@ export function MobileQrModal({ isOpen, onClose }: MobileQrModalProps) {
             {/* Copy Link Button */}
             <button
               onClick={handleCopyLink}
-              className="w-full py-3 rounded-xl bg-[#1f1f2e] hover:bg-[#2e2e42] text-gray-200 text-xs font-bold font-mono transition-all flex items-center justify-center gap-2 border border-[#1f1f2e]"
+              className="w-full py-3.5 rounded-xl bg-[#1f1f2e] hover:bg-[#2e2e42] text-gray-200 text-xs font-bold font-mono transition-all flex items-center justify-center gap-2 border border-[#1f1f2e]"
             >
               {copied ? <Check className="w-4 h-4 text-[#10b981]" /> : <Copy className="w-4 h-4" />}
               <span>{copied ? "URL Copied to Clipboard! ✓" : "Copy Web App Link"}</span>
