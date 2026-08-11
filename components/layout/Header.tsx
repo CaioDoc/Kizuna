@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Flame, Coins, Sparkles } from "lucide-react";
+import { Flame, Coins, Sparkles, QrCode } from "lucide-react";
 import { useUserStore } from "@/store/useUserStore";
 import { usePointsStore } from "@/store/usePointsStore";
 import { XpBar } from "@/components/ui/XpBar";
 import { useLevelUp } from "@/hooks/useLevelUp";
 import { LevelUpModal } from "@/components/ui/LevelUpModal";
+import { MobileQrModal } from "@/components/ui/MobileQrModal";
 
 export function Header() {
   const currentUser = useUserStore((state) => state.currentUser);
@@ -15,6 +16,7 @@ export function Header() {
   const totalXp = useUserStore((state) => state.totalXp);
   const balance = usePointsStore((state) => state.balance);
 
+  const [isQrOpen, setIsQrOpen] = useState(false);
   const { isLevelUpOpen, oldLevel, newLevel, triggerLevelUp, closeLevelUp } = useLevelUp();
   const prevLevelRef = useRef(totalLevel);
 
@@ -50,8 +52,18 @@ export function Header() {
           <XpBar level={totalLevel} currentXp={totalXp} />
         </div>
 
-        {/* Right Stats & User Profile */}
+        {/* Right Stats & Mobile QR Button */}
         <div className="flex items-center gap-3">
+          {/* Mobile QR Button */}
+          <button
+            onClick={() => setIsQrOpen(true)}
+            className="flex items-center gap-1.5 bg-[#8b5cf6]/15 hover:bg-[#8b5cf6]/30 border border-[#8b5cf6]/40 px-3 py-1.5 rounded-xl text-xs font-bold text-[#a78bfa] transition-all"
+            title="Scan QR Code to access on Mobile Smartphone"
+          >
+            <QrCode className="w-4 h-4 text-[#8b5cf6]" />
+            <span className="font-mono text-xs hidden sm:inline">Mobile QR</span>
+          </button>
+
           {/* Gold Counter */}
           <div className="flex items-center gap-1.5 bg-[#12121a] border border-[#f59e0b]/30 px-3 py-1.5 rounded-xl text-xs font-bold text-[#f59e0b] shadow-sm">
             <Coins className="w-4 h-4 text-[#f59e0b] animate-bounce" />
@@ -89,6 +101,12 @@ export function Header() {
           </div>
         </div>
       </div>
+
+      {/* Mobile QR Modal */}
+      <MobileQrModal
+        isOpen={isQrOpen}
+        onClose={() => setIsQrOpen(false)}
+      />
 
       {/* Celebratory Level Up Modal */}
       <LevelUpModal
