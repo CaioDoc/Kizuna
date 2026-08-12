@@ -54,7 +54,7 @@ export function AchievementsGrid({ achievements }: AchievementsGridProps) {
             whileHover={{ x: 4 }}
             className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
               item.isUnlocked
-                ? "bg-[#12121a] border-[#8b5cf6]/40 glow-purple shadow-lg"
+                ? "bg-[#12121a] border-[#8b5cf6]/50"
                 : "bg-[#0a0a0f]/60 border-[#1f1f2e] opacity-60"
             }`}
           >
