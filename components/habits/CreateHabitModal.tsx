@@ -5,16 +5,28 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, CheckSquare, Coins, Sparkles, Plus, Clock, Dumbbell, Zap, Brain, BookOpen, Shield } from "lucide-react";
+import { X, CheckSquare, Coins, Sparkles, Plus, Dumbbell, Zap, Brain, BookOpen, Shield, CalendarDays } from "lucide-react";
 import { useEntitiesStore } from "@/store/useEntitiesStore";
 import { useUserStore } from "@/store/useUserStore";
 import { AttributeType, DatabaseHabit } from "@/types";
 import { ATTRIBUTES_CONFIG } from "@/lib/attributes";
 
+export const WEEKDAYS = [
+  { id: "mon", label: "Seg", fullLabel: "Segunda-feira" },
+  { id: "tue", label: "Ter", fullLabel: "Terça-feira" },
+  { id: "wed", label: "Qua", fullLabel: "Quarta-feira" },
+  { id: "thu", label: "Qui", fullLabel: "Quinta-feira" },
+  { id: "fri", label: "Sex", fullLabel: "Sexta-feira" },
+  { id: "sat", label: "Sáb", fullLabel: "Sábado" },
+  { id: "sun", label: "Dom", fullLabel: "Domingo" },
+];
+
+const ALL_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+
 const createHabitSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
   description: z.string().optional(),
-  frequency: z.enum(["daily", "weekly", "monthly"]),
+  frequency: z.enum(["daily", "weekly", "monthly", "custom"]),
   attribute_type: z.enum(["str", "dex", "int", "wis", "cha", "con"]),
   reward_points: z.number().min(5, "Minimum 5 gold reward"),
   attribute_xp: z.number().min(5, "Minimum 5 attribute XP"),
@@ -52,6 +64,12 @@ export function CreateHabitModal({ isOpen, onClose, editingHabit }: CreateHabitM
   const [selectedAttribute, setSelectedAttribute] = useState<AttributeType>(
     editingHabit?.attribute_type || "str"
   );
+  const [repeatMode, setRepeatMode] = useState<"everyday" | "custom">(
+    editingHabit?.repeat_days && editingHabit.repeat_days.length < 7 ? "custom" : "everyday"
+  );
+  const [selectedDays, setSelectedDays] = useState<string[]>(
+    editingHabit?.repeat_days || ALL_DAYS
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -72,14 +90,39 @@ export function CreateHabitModal({ isOpen, onClose, editingHabit }: CreateHabitM
     },
   });
 
+  const handleToggleDay = (dayId: string) => {
+    if (repeatMode === "everyday") return;
+    if (selectedDays.includes(dayId)) {
+      if (selectedDays.length > 1) {
+        setSelectedDays(selectedDays.filter((d) => d !== dayId));
+      }
+    } else {
+      setSelectedDays([...selectedDays, dayId]);
+    }
+  };
+
+  const handleModeChange = (mode: "everyday" | "custom") => {
+    setRepeatMode(mode);
+    if (mode === "everyday") {
+      setSelectedDays(ALL_DAYS);
+      setValue("frequency", "daily");
+    } else {
+      setValue("frequency", "custom");
+    }
+  };
+
   const onSubmit = async (values: CreateHabitFormValues) => {
     setIsSubmitting(true);
     try {
+      const activeDays = repeatMode === "everyday" ? ALL_DAYS : selectedDays;
+      const finalFrequency = repeatMode === "everyday" ? "daily" : "custom";
+
       if (editingHabit) {
         await updateEntity("habit", editingHabit.id, {
           title: values.title,
           description: values.description || null,
-          frequency: values.frequency,
+          frequency: finalFrequency,
+          repeat_days: activeDays,
           attribute_type: values.attribute_type,
           reward_points: values.reward_points,
           attribute_xp: values.attribute_xp,
@@ -90,7 +133,8 @@ export function CreateHabitModal({ isOpen, onClose, editingHabit }: CreateHabitM
           user_id: currentUser?.id || "demo-user-id",
           title: values.title,
           description: values.description || null,
-          frequency: values.frequency,
+          frequency: finalFrequency,
+          repeat_days: activeDays,
           attribute_type: values.attribute_type,
           reward_points: values.reward_points,
           attribute_xp: values.attribute_xp,
@@ -125,9 +169,9 @@ export function CreateHabitModal({ isOpen, onClose, editingHabit }: CreateHabitM
                 </div>
                 <div>
                   <h2 className="text-xl font-extrabold text-white">
-                    {editingHabit ? "Edit Habit Routine" : "Create New Habit Routine"}
+                    {editingHabit ? "Editar Rotina de Hábito" : "Criar Nova Rotina de Hábito"}
                   </h2>
-                  <p className="text-xs text-gray-400">Establish daily consistency for RPG attribute growth.</p>
+                  <p className="text-xs text-gray-400">Configure a frequência semanal e ganhe XP de atributos.</p>
                 </div>
               </div>
               <button
@@ -142,11 +186,11 @@ export function CreateHabitModal({ isOpen, onClose, editingHabit }: CreateHabitM
               {/* Title Field */}
               <div className="space-y-1.5">
                 <label className="text-xs font-mono text-gray-300 font-bold uppercase">
-                  Habit Title
+                  Título do Hábito
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Read 20 pages of Tech documentation"
+                  placeholder="ex: Treino de Musculação / Cardio"
                   {...register("title")}
                   className="w-full px-4 py-3 rounded-xl bg-[#0a0a0f] border border-[#1f1f2e] focus:border-[#8b5cf6] text-white text-sm outline-none transition-colors"
                 />
@@ -156,35 +200,85 @@ export function CreateHabitModal({ isOpen, onClose, editingHabit }: CreateHabitM
               {/* Description */}
               <div className="space-y-1.5">
                 <label className="text-xs font-mono text-gray-300 font-bold uppercase">
-                  Description / Routine Details
+                  Descrição / Instruções
                 </label>
                 <input
                   type="text"
-                  placeholder="Optional details or instructions..."
+                  placeholder="Detalhes opcionais ou meta diária..."
                   {...register("description")}
                   className="w-full px-4 py-3 rounded-xl bg-[#0a0a0f] border border-[#1f1f2e] focus:border-[#8b5cf6] text-white text-sm outline-none transition-colors"
                 />
               </div>
 
-              {/* Frequency Selector */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-mono text-gray-300 font-bold uppercase flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-[#06b6d4]" /> Frequency Schedule
+              {/* Dynamic Weekly Frequency Selector */}
+              <div className="space-y-3 p-4 rounded-2xl bg-[#0a0a0f] border border-[#1f1f2e]">
+                <label className="text-xs font-mono text-gray-300 font-bold uppercase flex items-center gap-1.5">
+                  <CalendarDays className="w-4 h-4 text-[#06b6d4]" /> Frequência de Repetição Semanal
                 </label>
-                <select
-                  {...register("frequency")}
-                  className="w-full px-4 py-3 rounded-xl bg-[#0a0a0f] border border-[#1f1f2e] focus:border-[#8b5cf6] text-white text-sm outline-none"
-                >
-                  <option value="daily">Daily Routine</option>
-                  <option value="weekly">Weekly Routine</option>
-                  <option value="monthly">Monthly Routine</option>
-                </select>
+
+                {/* Mode Selector Tabs */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleModeChange("everyday")}
+                    className={`py-2.5 px-3 rounded-xl text-xs font-mono font-bold uppercase transition-all border ${
+                      repeatMode === "everyday"
+                        ? "bg-[#8b5cf6] text-white border-[#8b5cf6] shadow-md glow-purple"
+                        : "bg-[#12121a] text-gray-400 border-[#1f1f2e] hover:text-white"
+                    }`}
+                  >
+                    Se repete todos os dias
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleModeChange("custom")}
+                    className={`py-2.5 px-3 rounded-xl text-xs font-mono font-bold uppercase transition-all border ${
+                      repeatMode === "custom"
+                        ? "bg-[#06b6d4] text-white border-[#06b6d4] shadow-md glow-cyan"
+                        : "bg-[#12121a] text-gray-400 border-[#1f1f2e] hover:text-white"
+                    }`}
+                  >
+                    Dias Selecionados
+                  </button>
+                </div>
+
+                {/* Interactive Dynamic Day Pills */}
+                <div className="space-y-1.5 pt-1">
+                  <span className="text-[10px] font-mono text-gray-400 block">
+                    {repeatMode === "everyday"
+                      ? "Ativo todos os 7 dias da semana"
+                      : "Clique nos dias desejados para ativar:"}
+                  </span>
+
+                  <div className="grid grid-cols-7 gap-1.5">
+                    {WEEKDAYS.map((day) => {
+                      const isActive = selectedDays.includes(day.id);
+                      return (
+                        <button
+                          type="button"
+                          key={day.id}
+                          onClick={() => handleToggleDay(day.id)}
+                          disabled={repeatMode === "everyday"}
+                          title={day.fullLabel}
+                          className={`py-2 rounded-xl text-xs font-mono font-bold transition-all border flex flex-col items-center justify-center ${
+                            isActive
+                              ? "bg-[#8b5cf6]/20 border-[#8b5cf6] text-[#a78bfa] shadow-sm"
+                              : "bg-[#12121a] border-[#1f1f2e] text-gray-600 hover:text-gray-400"
+                          } ${repeatMode === "everyday" ? "cursor-default" : "cursor-pointer hover:border-[#06b6d4]"}`}
+                        >
+                          <span>{day.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
 
               {/* Attribute Selector */}
               <div className="space-y-2">
                 <label className="text-xs font-mono text-gray-300 font-bold uppercase">
-                  Primary RPG Attribute Trained
+                  Atributo RPG Treinado
                 </label>
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                   {(Object.keys(ATTRIBUTES_CONFIG) as AttributeType[]).map((attrKey) => {
@@ -216,7 +310,7 @@ export function CreateHabitModal({ isOpen, onClose, editingHabit }: CreateHabitM
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-mono text-gray-300 font-bold uppercase flex items-center gap-1">
-                    <Coins className="w-3.5 h-3.5 text-[#f59e0b]" /> Gold Reward
+                    <Coins className="w-3.5 h-3.5 text-[#f59e0b]" /> Ouro Recompensa
                   </label>
                   <input
                     type="number"
@@ -228,7 +322,7 @@ export function CreateHabitModal({ isOpen, onClose, editingHabit }: CreateHabitM
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-mono text-gray-300 font-bold uppercase flex items-center gap-1">
-                    <Sparkles className="w-3.5 h-3.5 text-[#8b5cf6]" /> Stat XP Bonus
+                    <Sparkles className="w-3.5 h-3.5 text-[#8b5cf6]" /> Bônus de XP
                   </label>
                   <input
                     type="number"
@@ -247,7 +341,7 @@ export function CreateHabitModal({ isOpen, onClose, editingHabit }: CreateHabitM
                   className="w-full py-3.5 text-xs font-black uppercase tracking-wider rounded-xl bg-gradient-to-r from-[#06b6d4] to-[#8b5cf6] text-white shadow-lg glow-purple hover:brightness-110 transition-all flex items-center justify-center gap-2"
                 >
                   <Plus className="w-4 h-4" />
-                  {isSubmitting ? "Saving..." : editingHabit ? "Update Habit Routine" : "Establish Habit Routine"}
+                  {isSubmitting ? "Salvando..." : editingHabit ? "Atualizar Rotina" : "Cadastrar Rotina de Hábito"}
                 </button>
               </div>
             </form>

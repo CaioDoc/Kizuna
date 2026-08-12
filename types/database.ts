@@ -1,7 +1,7 @@
 export type EpicStatus = "active" | "completed" | "abandoned";
 export type QuestStatus = "active" | "completed" | "abandoned";
 export type TaskStatus = "pending" | "in_progress" | "completed";
-export type HabitFrequency = "daily" | "weekly" | "monthly";
+export type HabitFrequency = "daily" | "weekly" | "monthly" | "custom";
 export type AttributeType = "str" | "dex" | "int" | "wis" | "cha" | "con";
 export type EntityType = "epic" | "quest" | "task" | "habit" | "reward";
 export type ActionType = "created" | "completed" | "redeemed" | "archived";
@@ -81,6 +81,7 @@ export interface DatabaseHabit {
   attribute_type: AttributeType;
   attribute_xp: number;
   frequency: HabitFrequency;
+  repeat_days?: string[]; // e.g. ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
   is_active: boolean;
   image_url: string | null;
   created_at: string;

@@ -2,10 +2,22 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Flame, GripVertical, Check, Sparkles, Edit, Trash2, BarChart2 } from "lucide-react";
+import { Flame, GripVertical, Check, Sparkles, Edit, Trash2, BarChart2, CalendarDays } from "lucide-react";
 import { DatabaseHabit } from "@/types";
 import { ATTRIBUTES_CONFIG } from "@/lib/attributes";
 import { playCompletionSound } from "@/lib/audio";
+
+const WEEKDAYS_MINI = [
+  { id: "mon", label: "S" },
+  { id: "tue", label: "T" },
+  { id: "wed", label: "Q" },
+  { id: "thu", label: "Q" },
+  { id: "fri", label: "S" },
+  { id: "sat", label: "S" },
+  { id: "sun", label: "D" },
+];
+
+const ALL_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
 export interface HabitCardProps {
   habit: DatabaseHabit;
@@ -28,6 +40,9 @@ export function HabitCard({
 }: HabitCardProps) {
   const [showFloatingXp, setShowFloatingXp] = useState(false);
   const attributeMeta = ATTRIBUTES_CONFIG[habit.attribute_type || "str"];
+
+  const activeDays = habit.repeat_days || ALL_DAYS;
+  const isEveryday = activeDays.length === 7;
 
   const handleCheck = () => {
     if (!isCompletedToday) {
@@ -96,11 +111,38 @@ export function HabitCard({
               <Flame className="w-3 h-3 text-red-500 fill-red-500" />
               <span>{streakCount}d Streak</span>
             </div>
+
+            {/* Schedule Badge */}
+            <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-[#06b6d4]/10 text-[#06b6d4] border border-[#06b6d4]/30 flex items-center gap-1">
+              <CalendarDays className="w-3 h-3" />
+              {isEveryday ? "Todos os dias" : `${activeDays.length}x / semana`}
+            </span>
           </div>
 
           <h3 className={`font-bold text-sm sm:text-base truncate ${isCompletedToday ? "line-through text-gray-400" : "text-white"}`}>
             {habit.title}
           </h3>
+
+          {/* Weekday Active Indicators Bar */}
+          <div className="flex items-center gap-1 pt-1">
+            {WEEKDAYS_MINI.map((day) => {
+              const isActive = activeDays.includes(day.id);
+              return (
+                <span
+                  key={day.id}
+                  className={`w-5 h-5 rounded-md text-[9px] font-mono font-bold flex items-center justify-center border transition-all ${
+                    isActive
+                      ? "bg-[#8b5cf6]/30 border-[#8b5cf6] text-[#a78bfa]"
+                      : "bg-[#0a0a0f] border-[#1f1f2e] text-gray-600"
+                  }`}
+                  title={day.label}
+                >
+                  {day.label}
+                </span>
+              );
+            })}
+          </div>
+
           {habit.description && (
             <p className="text-xs text-gray-400 line-clamp-1">{habit.description}</p>
           )}

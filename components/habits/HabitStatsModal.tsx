@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Flame, Trophy, BarChart2, CheckCircle2, Sparkles, Dumbbell, Zap, Brain, BookOpen, Shield } from "lucide-react";
+import { X, Flame, Trophy, BarChart2, CheckCircle2, Sparkles, Dumbbell, Zap, Brain, BookOpen, Shield, CalendarDays } from "lucide-react";
 import { DatabaseHabit } from "@/types";
 import { ATTRIBUTES_CONFIG } from "@/lib/attributes";
 
@@ -21,6 +21,18 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   Shield: <Shield className="w-5 h-5" />,
 };
 
+const WEEKDAYS_MAP: Record<string, string> = {
+  mon: "Segunda",
+  tue: "Terça",
+  wed: "Quarta",
+  thu: "Quinta",
+  fri: "Sexta",
+  sat: "Sábado",
+  sun: "Domingo",
+};
+
+const ALL_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+
 export function HabitStatsModal({ habit, isOpen, onClose }: HabitStatsModalProps) {
   if (!habit) return null;
 
@@ -29,6 +41,9 @@ export function HabitStatsModal({ habit, isOpen, onClose }: HabitStatsModalProps
   const bestStreak = 24;
   const completionRate = 88;
   const totalXpEarned = 1450;
+
+  const activeDays = habit.repeat_days || ALL_DAYS;
+  const isEveryday = activeDays.length === 7;
 
   return (
     <AnimatePresence>
@@ -93,9 +108,17 @@ export function HabitStatsModal({ habit, isOpen, onClose }: HabitStatsModalProps
             </div>
 
             {/* Habit Schedule Info */}
-            <div className="p-4 rounded-2xl bg-[#0a0a0f] border border-[#1f1f2e] text-xs space-y-1">
-              <span className="text-gray-400 font-mono uppercase text-[10px]">Routine Frequency</span>
-              <div className="font-bold text-gray-200 uppercase">{habit.frequency} Routine</div>
+            <div className="p-4 rounded-2xl bg-[#0a0a0f] border border-[#1f1f2e] text-xs space-y-2">
+              <div className="flex items-center gap-1.5 text-gray-400 font-mono uppercase text-[10px]">
+                <CalendarDays className="w-3.5 h-3.5 text-[#06b6d4]" /> Repetição Semanal
+              </div>
+              <div className="font-bold text-gray-200 text-sm">
+                {isEveryday
+                  ? "Se repete todos os dias (7 dias por semana)"
+                  : `${activeDays.length} dias por semana: ${activeDays
+                      .map((d) => WEEKDAYS_MAP[d])
+                      .join(", ")}`}
+              </div>
             </div>
           </motion.div>
         </div>

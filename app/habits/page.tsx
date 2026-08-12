@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { CheckSquare, Plus, Sparkles, CheckCircle2, RotateCcw } from "lucide-react";
+import { CheckSquare, Plus, Sparkles, CheckCircle2, RotateCcw, CalendarDays, Filter } from "lucide-react";
 import { useEntitiesStore } from "@/store/useEntitiesStore";
 import { usePointsStore } from "@/store/usePointsStore";
 import { HabitCard } from "@/components/habits/HabitCard";
@@ -14,6 +14,8 @@ import { DatabaseHabit } from "@/types";
 import { playCompletionSound } from "@/lib/audio";
 import confetti from "canvas-confetti";
 
+const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+
 export default function HabitsPage() {
   const habits = useEntitiesStore((state) => state.habits);
   const deleteEntity = useEntitiesStore((state) => state.deleteEntity);
@@ -23,6 +25,20 @@ export default function HabitsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingHabit, setEditingHabit] = useState<DatabaseHabit | null>(null);
   const [statsHabit, setStatsHabit] = useState<DatabaseHabit | null>(null);
+  const [scheduleFilter, setScheduleFilter] = useState<"all" | "today" | "custom">("all");
+
+  const todayKey = DAY_KEYS[new Date().getDay()];
+
+  const filteredHabits = habits.filter((h) => {
+    const repeatDays = h.repeat_days || ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+    if (scheduleFilter === "today") {
+      return repeatDays.includes(todayKey);
+    }
+    if (scheduleFilter === "custom") {
+      return repeatDays.length < 7;
+    }
+    return true;
+  });
 
   const handleToggleHabit = async (habit: DatabaseHabit) => {
     const isCompleted = !completedMap[habit.id];
@@ -42,8 +58,8 @@ export default function HabitsPage() {
       colors: ["#10b981", "#8b5cf6", "#06b6d4", "#f59e0b"],
     });
 
-    const newMap: Record<string, boolean> = {};
-    for (const h of habits) {
+    const newMap: Record<string, boolean> = { ...completedMap };
+    for (const h of filteredHabits) {
       newMap[h.id] = true;
       if (!completedMap[h.id]) {
         await earnPoints(h.reward_points, h.id, "habit", h.attribute_type, h.attribute_xp);
@@ -60,8 +76,8 @@ export default function HabitsPage() {
     await deleteEntity("habit", id);
   };
 
-  const completedCount = Object.values(completedMap).filter(Boolean).length;
-  const isAllDone = habits.length > 0 && completedCount === habits.length;
+  const completedCount = filteredHabits.filter((h) => completedMap[h.id]).length;
+  const isAllDone = filteredHabits.length > 0 && completedCount === filteredHabits.length;
 
   return (
     <div className="space-y-8">
@@ -84,7 +100,7 @@ export default function HabitsPage() {
               Habits & <span className="anime-gradient-text">Dailies</span>
             </h1>
             <p className="text-sm text-gray-400 max-w-xl leading-relaxed">
-              Maintain your daily streaks to power up your hero attributes. Every habit check-in awards attribute XP.
+              Configure a repetição semanal dos seus hábitos, monitore streaks e desenvolva os atributos do seu herói.
             </p>
           </div>
 
@@ -97,7 +113,7 @@ export default function HabitsPage() {
               className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-[#06b6d4] via-[#8b5cf6] to-[#f59e0b] text-white text-xs font-black uppercase tracking-wider shadow-xl glow-purple hover:brightness-110 transition-all flex items-center justify-center gap-2 shrink-0"
             >
               <Plus className="w-4 h-4" />
-              <span>New Habit Routine</span>
+              <span>Novo Hábito</span>
             </button>
           </div>
         </div>
@@ -105,21 +121,55 @@ export default function HabitsPage() {
 
       {/* TODAY'S HABITS CHECKLIST (Prominent Section) */}
       <section className="glass-panel p-6 sm:p-8 rounded-3xl border border-[#1f1f2e] space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1f1f2e] pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1f1f2e] pb-4 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-[#10b981]/20 border border-[#10b981]/40 text-[#10b981]">
               <CheckSquare className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-xl font-extrabold text-white">Today&apos;s Routine Checklist</h2>
+              <h2 className="text-xl font-extrabold text-white">Lista de Rotinas</h2>
               <p className="text-xs text-gray-400 font-mono">
-                {completedCount} / {habits.length} Routines Checked Today
+                {completedCount} / {filteredHabits.length} Rotinas Concluídas Hoje
               </p>
             </div>
           </div>
 
-          {/* Checklist Actions */}
-          <div className="flex items-center gap-2">
+          {/* Schedule Filter Tabs & Checklist Actions */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Filter Tabs */}
+            <div className="flex items-center gap-1 bg-[#0a0a0f] p-1 rounded-xl border border-[#1f1f2e]">
+              <button
+                onClick={() => setScheduleFilter("all")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
+                  scheduleFilter === "all"
+                    ? "bg-[#8b5cf6] text-white shadow-sm"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                Todos ({habits.length})
+              </button>
+              <button
+                onClick={() => setScheduleFilter("today")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all flex items-center gap-1 ${
+                  scheduleFilter === "today"
+                    ? "bg-[#06b6d4] text-white shadow-sm"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                <CalendarDays className="w-3.5 h-3.5" /> Hoje
+              </button>
+              <button
+                onClick={() => setScheduleFilter("custom")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all flex items-center gap-1 ${
+                  scheduleFilter === "custom"
+                    ? "bg-[#f59e0b] text-white shadow-sm"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                <Filter className="w-3.5 h-3.5" /> Dias Customizados
+              </button>
+            </div>
+
             <button
               onClick={handleCompleteAll}
               disabled={isAllDone}
@@ -130,13 +180,13 @@ export default function HabitsPage() {
               }`}
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>{isAllDone ? "All Done Today! ✓" : "Complete All Routines"}</span>
+              <span>{isAllDone ? "Concluídos! ✓" : "Concluir Todos"}</span>
             </button>
 
             <button
               onClick={handleResetChecklist}
               className="p-2.5 rounded-xl bg-[#12121a] hover:bg-[#1f1f2e] text-gray-400 hover:text-white border border-[#1f1f2e] transition-colors"
-              title="Reset Today Checklist"
+              title="Reiniciar Checklist de Hoje"
             >
               <RotateCcw className="w-4 h-4" />
             </button>
@@ -145,21 +195,29 @@ export default function HabitsPage() {
 
         {/* Habit Cards Checklist Grid */}
         <div className="space-y-3">
-          {habits.map((habit) => (
-            <HabitCard
-              key={habit.id}
-              habit={habit}
-              isCompletedToday={!!completedMap[habit.id]}
-              streakCount={completedMap[habit.id] ? 8 : 7}
-              onToggle={handleToggleHabit}
-              onEdit={(h) => {
-                setEditingHabit(h);
-                setIsCreateOpen(true);
-              }}
-              onDelete={handleDelete}
-              onViewStats={(h) => setStatsHabit(h)}
-            />
-          ))}
+          {filteredHabits.length > 0 ? (
+            filteredHabits.map((habit) => (
+              <HabitCard
+                key={habit.id}
+                habit={habit}
+                isCompletedToday={!!completedMap[habit.id]}
+                streakCount={completedMap[habit.id] ? 8 : 7}
+                onToggle={handleToggleHabit}
+                onEdit={(h) => {
+                  setEditingHabit(h);
+                  setIsCreateOpen(true);
+                }}
+                onDelete={handleDelete}
+                onViewStats={(h) => setStatsHabit(h)}
+              />
+            ))
+          ) : (
+            <div className="p-8 text-center bg-[#0a0a0f] rounded-2xl border border-[#1f1f2e] space-y-2">
+              <CalendarDays className="w-8 h-8 text-gray-500 mx-auto" />
+              <p className="text-sm font-bold text-gray-300">Nenhum hábito programado para este filtro.</p>
+              <p className="text-xs text-gray-500">Crie ou altere a frequência semanal de seus hábitos.</p>
+            </div>
+          )}
         </div>
       </section>
 
