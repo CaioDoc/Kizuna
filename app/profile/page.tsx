@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Shield, Flame, Coins, Sparkles, Edit, Trophy, Swords, CheckSquare, Dumbbell, Zap, Brain, BookOpen } from "lucide-react";
+import { Shield, Flame, Coins, Sparkles, Edit, Trophy, Swords, CheckSquare, Dumbbell, Zap, Brain, BookOpen, QrCode } from "lucide-react";
 import { useUserStore } from "@/store/useUserStore";
 import { usePointsStore } from "@/store/usePointsStore";
 import { useEntitiesStore } from "@/store/useEntitiesStore";
@@ -11,6 +11,7 @@ import { XpBar } from "@/components/ui/XpBar";
 import { AttributeRadarChart } from "@/components/profile/AttributeRadarChart";
 import { AchievementsGrid } from "@/components/profile/AchievementsGrid";
 import { EditProfileModal } from "@/components/profile/EditProfileModal";
+import { MobileQrModal } from "@/components/ui/MobileQrModal";
 import { calculateCharacterClass, INITIAL_ACHIEVEMENTS } from "@/lib/character";
 import { ATTRIBUTES_CONFIG } from "@/lib/attributes";
 import { AttributeType } from "@/types";
@@ -37,6 +38,7 @@ export default function ProfilePage() {
   const habits = useEntitiesStore((state) => state.habits);
 
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isQrOpen, setIsQrOpen] = useState(false);
 
   const classInfo = calculateCharacterClass(attributes);
   const completedEpicsCount = epics.filter((e) => e.status === "completed").length;
@@ -97,8 +99,8 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Gold & Streak Pill */}
-              <div className="flex items-center justify-center gap-3">
+              {/* Gold, Streak & Mobile QR Action */}
+              <div className="flex flex-wrap items-center justify-center md:justify-end gap-2.5">
                 <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0a0a0f] border border-[#f59e0b]/40 text-[#f59e0b] font-mono text-sm font-bold shadow-md">
                   <Coins className="w-4 h-4 text-[#f59e0b]" />
                   <span>{balance} Gold</span>
@@ -108,6 +110,15 @@ export default function ProfilePage() {
                   <Flame className="w-4 h-4 text-red-500 fill-red-500" />
                   <span>{currentUser?.current_streak || 7}d Streak</span>
                 </div>
+
+                <button
+                  onClick={() => setIsQrOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#8b5cf6]/20 hover:bg-[#8b5cf6]/35 border border-[#8b5cf6]/50 text-[#a78bfa] font-mono text-xs font-bold transition-all shadow-md"
+                  title="Scan QR Code to access Web App on Smartphone"
+                >
+                  <QrCode className="w-4 h-4 text-[#8b5cf6]" />
+                  <span>Mobile App QR</span>
+                </button>
               </div>
             </div>
 
@@ -244,6 +255,12 @@ export default function ProfilePage() {
       <EditProfileModal
         isOpen={isEditOpen}
         onClose={() => setIsEditOpen(false)}
+      />
+
+      {/* MOBILE QR MODAL */}
+      <MobileQrModal
+        isOpen={isQrOpen}
+        onClose={() => setIsQrOpen(false)}
       />
     </div>
   );

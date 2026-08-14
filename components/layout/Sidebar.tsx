@@ -10,7 +10,6 @@ import {
   Trophy,
   Gift,
   Calendar as CalendarIcon,
-  User,
   ChevronLeft,
   ChevronRight,
   Sparkles,
@@ -25,7 +24,6 @@ const NAV_ITEMS = [
   { name: "Epics", href: "/epics", icon: Trophy },
   { name: "Rewards", href: "/rewards", icon: Gift },
   { name: "Calendar", href: "/calendar", icon: CalendarIcon },
-  { name: "Profile", href: "/profile", icon: User },
 ];
 
 export function Sidebar() {
@@ -116,14 +114,14 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all font-mono text-[10px] font-bold gap-1 min-w-[48px]",
+                "flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all font-mono text-[10px] font-bold gap-1 min-w-[52px]",
                 isActive
                   ? "text-[#8b5cf6] font-extrabold bg-[#8b5cf6]/15 border border-[#8b5cf6]/30 shadow-md"
                   : "text-gray-400 hover:text-white"
               )}
             >
               <Icon className={cn("w-5 h-5", isActive ? "text-[#8b5cf6] scale-110" : "text-gray-400")} />
-              <span className="truncate max-w-[56px] text-center leading-none">{item.name}</span>
+              <span className="truncate max-w-[60px] text-center leading-none">{item.name}</span>
             </Link>
           );
         })}
