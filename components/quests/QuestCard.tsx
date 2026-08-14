@@ -46,27 +46,27 @@ export function QuestCard({ quest, tasks, onViewDetails }: QuestCardProps) {
       whileHover={{ y: -4, scale: 1.01 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
       onClick={() => onViewDetails(quest)}
-      className="group relative cursor-pointer rounded-2xl bg-[#12121a] border border-[#1f1f2e] hover:border-[#8b5cf6]/50 p-5 shadow-xl flex flex-col justify-between space-y-4 transition-all duration-300 overflow-hidden"
+      className="group relative cursor-pointer rounded-2xl bg-[#12121a] border border-[#1f1f2e] hover:border-[#8b5cf6]/50 p-4 sm:p-5 shadow-xl flex flex-col justify-between space-y-4 transition-all duration-300 overflow-hidden"
     >
       {/* Top Header Row */}
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-3 sm:gap-4">
         {/* Left Side: Attribute Icon Box */}
         <div
-          className={`p-3 rounded-2xl border-2 ${attributeMeta.borderColor} ${attributeMeta.bgColor} ${attributeMeta.textColor} shadow-md shrink-0`}
+          className={`p-2.5 sm:p-3 rounded-2xl border-2 ${attributeMeta.borderColor} ${attributeMeta.bgColor} ${attributeMeta.textColor} shadow-md shrink-0`}
         >
           {ICON_MAP[attributeMeta.iconName] || <Sparkles className="w-5 h-5" />}
         </div>
 
         {/* Quest Info */}
-        <div className="flex-1 space-y-1 min-w-0">
-          <div className="flex items-center justify-between gap-2">
-            <span className={`text-[10px] font-mono font-extrabold uppercase px-2 py-0.5 rounded border ${attributeMeta.badgeBorder} ${attributeMeta.bgColor} ${attributeMeta.textColor}`}>
+        <div className="flex-1 space-y-1.5 min-w-0">
+          <div className="flex items-center justify-between gap-1.5 flex-wrap">
+            <span className={`text-xs font-mono font-extrabold uppercase px-2 py-0.5 rounded border ${attributeMeta.badgeBorder} ${attributeMeta.bgColor} ${attributeMeta.textColor}`}>
               {attributeMeta.fullName} (+{quest.attribute_xp} XP)
             </span>
 
             {/* Status Pill */}
             <span
-              className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded border ${
+              className={`text-xs font-mono font-bold uppercase px-2 py-0.5 rounded border ${
                 quest.status === "completed"
                   ? "bg-[#10b981]/20 text-[#10b981] border-[#10b981]/40"
                   : quest.status === "abandoned"
@@ -78,10 +78,10 @@ export function QuestCard({ quest, tasks, onViewDetails }: QuestCardProps) {
             </span>
           </div>
 
-          <h3 className="text-base font-extrabold text-white group-hover:text-[#a78bfa] transition-colors truncate">
+          <h3 className="text-base sm:text-lg font-extrabold text-white group-hover:text-[#a78bfa] transition-colors leading-snug break-words">
             {quest.title}
           </h3>
-          <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">
+          <p className="text-xs sm:text-sm text-gray-400 line-clamp-2 leading-relaxed">
             {quest.description || "No bounty description provided."}
           </p>
         </div>
@@ -89,7 +89,7 @@ export function QuestCard({ quest, tasks, onViewDetails }: QuestCardProps) {
 
       {/* Rewards & Progress Footer */}
       <div className="space-y-3 pt-3 border-t border-[#1f1f2e]">
-        <div className="flex items-center justify-between text-xs font-mono">
+        <div className="flex items-center justify-between text-xs font-mono flex-wrap gap-2">
           {/* Gold Bounty Badge */}
           <div className="flex items-center gap-1.5 text-[#f59e0b] font-bold">
             <Coins className="w-4 h-4" />
@@ -97,7 +97,7 @@ export function QuestCard({ quest, tasks, onViewDetails }: QuestCardProps) {
           </div>
 
           {/* Due Date Indicator */}
-          <div className="flex items-center gap-1 text-gray-400 text-[11px]">
+          <div className="flex items-center gap-1 text-gray-400 text-xs">
             <Clock className="w-3.5 h-3.5 text-[#06b6d4]" />
             <span>{dueDateText}</span>
           </div>
@@ -105,13 +105,13 @@ export function QuestCard({ quest, tasks, onViewDetails }: QuestCardProps) {
 
         {/* Task Progress Bar */}
         <div className="space-y-1">
-          <div className="flex justify-between text-[11px] font-mono text-gray-400">
+          <div className="flex justify-between text-xs font-mono text-gray-400">
             <span>Sub-Tasks Cleared</span>
             <span>
               {completedTasksCount} / {totalTasks} ({progressPercentage}%)
             </span>
           </div>
-          <div className="w-full h-1.5 bg-[#0a0a0f] rounded-full overflow-hidden p-[1px]">
+          <div className="w-full h-2 bg-[#0a0a0f] rounded-full overflow-hidden p-[1px] border border-[#1f1f2e]">
             <div
               className="h-full rounded-full transition-all duration-300"
               style={{
