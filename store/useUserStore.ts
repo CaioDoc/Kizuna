@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 import { createClient } from "@/lib/supabase/client";
 import { DatabaseUser, AttributeType } from "@/types";
 
@@ -45,93 +46,103 @@ const DEFAULT_USER: DatabaseUser = {
   created_at: new Date().toISOString(),
 };
 
-export const useUserStore = create<UserStoreState>((set, get) => ({
-  currentUser: DEFAULT_USER,
-  totalLevel: DEFAULT_USER.total_level,
-  totalXp: DEFAULT_USER.total_xp,
-  attributes: {
-    str: { level: DEFAULT_USER.str_level, xp: DEFAULT_USER.str_xp },
-    dex: { level: DEFAULT_USER.dex_level, xp: DEFAULT_USER.dex_xp },
-    int: { level: DEFAULT_USER.int_level, xp: DEFAULT_USER.int_xp },
-    wis: { level: DEFAULT_USER.wis_level, xp: DEFAULT_USER.wis_xp },
-    cha: { level: DEFAULT_USER.cha_level, xp: DEFAULT_USER.cha_xp },
-    con: { level: DEFAULT_USER.con_level, xp: DEFAULT_USER.con_xp },
-  },
-  streak: { current: DEFAULT_USER.current_streak, best: DEFAULT_USER.best_streak },
-  isLoading: false,
-  error: null,
+export const useUserStore = create<UserStoreState>()(
+  persist(
+    (set, get) => ({
+      currentUser: DEFAULT_USER,
+      totalLevel: DEFAULT_USER.total_level,
+      totalXp: DEFAULT_USER.total_xp,
+      attributes: {
+        str: { level: DEFAULT_USER.str_level, xp: DEFAULT_USER.str_xp },
+        dex: { level: DEFAULT_USER.dex_level, xp: DEFAULT_USER.dex_xp },
+        int: { level: DEFAULT_USER.int_level, xp: DEFAULT_USER.int_xp },
+        wis: { level: DEFAULT_USER.wis_level, xp: DEFAULT_USER.wis_xp },
+        cha: { level: DEFAULT_USER.cha_level, xp: DEFAULT_USER.cha_xp },
+        con: { level: DEFAULT_USER.con_level, xp: DEFAULT_USER.con_xp },
+      },
+      streak: { current: DEFAULT_USER.current_streak, best: DEFAULT_USER.best_streak },
+      isLoading: false,
+      error: null,
 
-  fetchUser: async () => {
-    set({ isLoading: true, error: null });
-    try {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      fetchUser: async () => {
+        set({ isLoading: true, error: null });
+        try {
+          const supabase = createClient();
+          const { data: { user } } = await supabase.auth.getUser();
 
-      if (!user) {
-        set({ isLoading: false });
-        return;
-      }
+          if (!user) {
+            set({ isLoading: false });
+            return;
+          }
 
-      const { data, error } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", user.id)
-        .single();
+          const { data, error } = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", user.id)
+            .single();
 
-      if (error) throw error;
+          if (error) throw error;
 
-      if (data) {
-        const u = data as DatabaseUser;
+          if (data) {
+            const u = data as DatabaseUser;
+            set({
+              currentUser: u,
+              totalLevel: u.total_level,
+              totalXp: u.total_xp,
+              attributes: {
+                str: { level: u.str_level, xp: u.str_xp },
+                dex: { level: u.dex_level, xp: u.dex_xp },
+                int: { level: u.int_level, xp: u.int_xp },
+                wis: { level: u.wis_level, xp: u.wis_xp },
+                cha: { level: u.cha_level, xp: u.cha_xp },
+                con: { level: u.con_level, xp: u.con_xp },
+              },
+              streak: { current: u.current_streak, best: u.best_streak },
+              isLoading: false,
+            });
+          }
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : "Failed to fetch user";
+          set({ error: message, isLoading: false });
+        }
+      },
+
+      updateUser: async (profilePartial) => {
+        const prevUser = get().currentUser;
+        if (!prevUser) return;
+
+        const updatedUser = { ...prevUser, ...profilePartial };
+
+        // Persistent state update
         set({
-          currentUser: u,
-          totalLevel: u.total_level,
-          totalXp: u.total_xp,
+          currentUser: updatedUser,
+          totalLevel: updatedUser.total_level,
+          totalXp: updatedUser.total_xp,
+          streak: { current: updatedUser.current_streak, best: updatedUser.best_streak },
           attributes: {
-            str: { level: u.str_level, xp: u.str_xp },
-            dex: { level: u.dex_level, xp: u.dex_xp },
-            int: { level: u.int_level, xp: u.int_xp },
-            wis: { level: u.wis_level, xp: u.wis_xp },
-            cha: { level: u.cha_level, xp: u.cha_xp },
-            con: { level: u.con_level, xp: u.con_xp },
+            str: { level: updatedUser.str_level, xp: updatedUser.str_xp },
+            dex: { level: updatedUser.dex_level, xp: updatedUser.dex_xp },
+            int: { level: updatedUser.int_level, xp: updatedUser.int_xp },
+            wis: { level: updatedUser.wis_level, xp: updatedUser.wis_xp },
+            cha: { level: updatedUser.cha_level, xp: updatedUser.cha_xp },
+            con: { level: updatedUser.con_level, xp: updatedUser.con_xp },
           },
-          streak: { current: u.current_streak, best: u.best_streak },
-          isLoading: false,
         });
-      }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to fetch user";
-      set({ error: message, isLoading: false });
+
+        try {
+          const supabase = createClient();
+          await supabase
+            .from("users")
+            .update(profilePartial)
+            .eq("id", prevUser.id);
+        } catch {
+          // Keep local state persisted in localStorage
+        }
+      },
+    }),
+    {
+      name: "kizuna-user-store",
+      storage: createJSONStorage(() => localStorage),
     }
-  },
-
-  updateUser: async (profilePartial) => {
-    const prevUser = get().currentUser;
-    if (!prevUser) return;
-
-    const updatedUser = { ...prevUser, ...profilePartial };
-
-    // Optimistic state update
-    set({
-      currentUser: updatedUser,
-      totalLevel: updatedUser.total_level,
-      totalXp: updatedUser.total_xp,
-      streak: { current: updatedUser.current_streak, best: updatedUser.best_streak },
-    });
-
-    try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from("users")
-        .update(profilePartial)
-        .eq("id", prevUser.id);
-
-      if (error) {
-        // Rollback on database failure
-        set({ currentUser: prevUser, error: error.message });
-      }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to update user profile";
-      set({ currentUser: prevUser, error: message });
-    }
-  },
-}));
+  )
+);
